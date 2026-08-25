@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "dd48bb47-2c7a-467f-84f6-f9ecc29e082a"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -24,13 +25,14 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.css"
-            ],
+            "styles": ["src/styles.css"],
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": []
+              "allowedHosts": [
+                "localhost",
+                 "192.168.1.11"
+              ]
             },
             "ssr": {
               "entry": "src/server.ts"
@@ -62,6 +64,12 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": [
+              "localhost",
+              "192.168.1.11"
+            ]
+          },
           "configurations": {
             "production": {
               "buildTarget": "my-discord:build:production"

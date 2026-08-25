@@ -1,0 +1,15 @@
+@if (socketService.currentRoom() === 'amor') {
+  <div class="absolute bottom-0 left-0 z-10 flex h-20 w-64 items-center justify-between border-t border-black/20 bg-[#232428] px-4">
+    <div class="min-w-0">
+      <p class="truncate text-sm font-semibold text-emerald-400">Conectado</p>
+      <p class="text-xs text-slate-400">Canal de voz</p>
+    </div>
+    <button
+      (click)="disconnect()"
+      class="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-500 text-lg text-white transition hover:bg-rose-400 cursor-pointer"
+      aria-label="Sair da sala"
+    >
+      ☎
+    </button>
+  </div>
+}
