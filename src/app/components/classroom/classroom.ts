@@ -22,59 +22,58 @@ export class Classroom {
   compartilhandoTela = signal(false);
   telasRemotas = signal<{ socketId: string; stream: MediaStream }[]>([]);
   message = '';
-  messages = signal<{ socketId: string; message: string}[]>([]);
-  async entrarSala(room: string){
-    if(this.socketService.currentRoom() === room){
+  messages = signal<{ socketId: string; message: string }[]>([]);
+  async entrarSala(room: string) {
+    if (this.socketService.currentRoom() === room) {
       return;
     }
 
-    if(this.socketService.currentRoom()){
+    if (this.socketService.currentRoom()) {
       this.sairDaSalaAtual();
     }
 
     // GURANÇA SSR: Só executa se for o navegador
     if (!isPlatformBrowser(this.platformId)) return;
 
-    try{
+    try {
       this.socketService.localStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
-        video: false
+        video: false,
       });
 
       this.socketService.joinRoom(room);
-    } catch(err){
+    } catch (err) {
       console.log('Erro ao acessar o microfone', err);
       alert('Você precisa permitir o microfone para entrar no canal de voz!');
     }
   }
 
-  sairDaSalaAtual(){
+  sairDaSalaAtual() {
     this.socketService.leaveRoom();
     this.finalizarMídia();
   }
 
-  finalizarMídia(){
+  finalizarMídia() {
     // GURANÇA SSR: Se estiver no servidor, ignora o 'document' para não quebrar
     if (!isPlatformBrowser(this.platformId)) return;
 
-    this.chamadasAtivas.forEach(call => call.close());
+    this.chamadasAtivas.forEach((call) => call.close());
     this.chamadasAtivas = [];
     this.pararCompartilhamentoDeTela();
     this.telasRemotas.set([]);
 
     if (this.socketService.localStream) {
-      this.socketService.localStream.getTracks().forEach(track => track.stop());
+      this.socketService.localStream.getTracks().forEach((track) => track.stop());
     }
     this.socketIds.set([]);
 
     const audios = document.querySelectorAll('audio');
-    audios.forEach(audio => audio.remove());
+    audios.forEach((audio) => audio.remove());
   }
 
-  constructor(){
+  constructor() {
     // GURANÇA SSR: Só registra os listeners do Socket e PeerJS no navegador
     if (isPlatformBrowser(this.platformId)) {
-
       this.socketService.socket.on('connect', () => {
         this.socketId = this.socketService.socket.id ?? '';
 
@@ -116,7 +115,7 @@ export class Classroom {
         this.removerTelaRemota(socketId);
       });
 
-      this.socketService.onReceiveMessage((data) =>{
+      this.socketService.onReceiveMessage((data) => {
         console.log('Mensagem recebida: ', data);
 
         this.messages.update((messages) => [...messages, data]);
@@ -129,7 +128,6 @@ export class Classroom {
         this.finalizarMídia();
       }
     });
-
   }
 
   reproduzirAudioUsuario(stream: MediaStream, userId: string) {
@@ -146,12 +144,12 @@ export class Classroom {
   }
 
   sendMessage() {
-  if (!this.message.trim()) return;
+    if (!this.message.trim()) return;
 
-  this.socketService.sendMessage(this.message.trim());
+    this.socketService.sendMessage(this.message.trim());
 
-  this.message = '';
-}
+    this.message = '';
+  }
 
   async compartilharTela() {
     if (!isPlatformBrowser(this.platformId) || this.compartilhandoTela()) return;
@@ -159,13 +157,26 @@ export class Classroom {
     try {
       // O navegador abre o seletor nativo: tela inteira, janela ou aba.
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
+        video: {
+          frameRate: {
+            ideal: 60,
+            max: 60,
+          },
+          width: {
+            ideal: 1920,
+          },
+          height: {
+            ideal: 1080,
+          },
+        },
         audio: false,
       });
 
       this.telaCompartilhada = stream;
       this.compartilhandoTela.set(true);
-      stream.getVideoTracks()[0]?.addEventListener('ended', () => this.pararCompartilhamentoDeTela());
+      stream
+        .getVideoTracks()[0]
+        ?.addEventListener('ended', () => this.pararCompartilhamentoDeTela());
 
       this.socketIds().forEach((socketId) => this.compartilharTelaCom(socketId));
     } catch (error) {
