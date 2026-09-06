@@ -1,11 +1,15 @@
 <main class="relative flex h-dvh min-w-0 overflow-hidden bg-[#313338]">
   <aside class="relative flex w-64 shrink-0 flex-col border-r border-black/20 bg-[#2b2d31] pb-24">
-    <div class="flex h-14 items-center border-b border-black/20 px-4 font-bold text-white shadow-sm">
+    <div
+      class="flex h-14 items-center border-b border-black/20 px-4 font-bold text-white shadow-sm"
+    >
       <span class="mr-2 text-indigo-400">♥</span> Nosso servidor
     </div>
 
     <div class="px-3 pt-5">
-      <p class="mb-2 px-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">Canais de voz</p>
+      <p class="mb-2 px-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+        Canais de voz
+      </p>
       <button
         (click)="entrarSala('amor')"
         class="flex w-full items-center gap-2 rounded-md bg-[#404249] px-2 py-2 text-left text-sm font-semibold text-white transition hover:bg-[#4b4e55] cursor-pointer"
@@ -35,7 +39,9 @@
   <app-tools-room />
 
   <section class="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-[#313338] text-slate-100">
-    <header class="flex h-14 shrink-0 items-center gap-3 border-b border-black/20 bg-[#313338] px-5 shadow-sm">
+    <header
+      class="flex h-14 shrink-0 items-center gap-3 border-b border-black/20 bg-[#313338] px-5 shadow-sm"
+    >
       <span class="text-2xl text-slate-500">#</span>
       <div>
         <h1 class="text-sm font-bold">amor</h1>
@@ -59,49 +65,46 @@
 
     <div class="flex-1 space-y-3 overflow-y-auto px-6 py-5">
       @for (tela of telasRemotas(); track tela.socketId) {
-  <div class="overflow-hidden rounded-lg border border-slate-600 bg-[#1e1f22] shadow-lg">
+        <div class="overflow-hidden rounded-lg border border-slate-600 bg-[#1e1f22] shadow-lg">
+          <!-- Cabeçalho -->
+          <div class="flex items-center justify-between border-b border-slate-700 px-4 py-2">
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-300">
+              <span class="h-2 w-2 rounded-full bg-rose-400"></span>
+              {{ tela.socketId }} está compartilhando a tela
+            </div>
 
-    <!-- Cabeçalho -->
-    <div class="flex items-center justify-between border-b border-slate-700 px-4 py-2">
+            <!-- Botão tela cheia -->
+            <button
+              type="button"
+              (click)="entrarTelaCheia(videoTela)"
+              class="flex cursor-pointer items-center gap-2 rounded-md bg-[#404249] px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-[#4b4e55] hover:text-white"
+              title="Tela cheia"
+            >
+              <span class="text-base">⛶</span>
+              Tela cheia
+            </button>
+          </div>
 
-      <div class="flex items-center gap-2 text-xs font-semibold text-slate-300">
-        <span class="h-2 w-2 rounded-full bg-rose-400"></span>
-        {{ tela.socketId }} está compartilhando a tela
-      </div>
-
-      <!-- Botão tela cheia -->
-      <button
-        type="button"
-        (click)="entrarTelaCheia(videoTela)"
-        class="flex cursor-pointer items-center gap-2 rounded-md bg-[#404249] px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-[#4b4e55] hover:text-white"
-        title="Tela cheia"
-      >
-        <span class="text-base">⛶</span>
-        Tela cheia
-      </button>
-
-    </div>
-
-    <!-- Área da transmissão -->
-    <div class="relative flex min-h-[300px] items-center justify-center bg-black">
-
-      <video
-        #videoTela
-        [srcObject]="tela.stream"
-        autoplay
-        playsinline
-        class="max-h-[75vh] min-h-[300px] w-full cursor-pointer bg-black object-contain"
-        (dblclick)="entrarTelaCheia(videoTela)"
-      ></video>
-
-    </div>
-
-  </div>
-}
+          <!-- Área da transmissão -->
+          <div class="relative flex min-h-[300px] items-center justify-center bg-black">
+            <video
+              #videoTela
+              [srcObject]="tela.stream"
+              autoplay
+              playsinline
+              controls
+              class="max-h-[75vh] min-h-[300px] w-full cursor-pointer bg-black object-contain"
+              (dblclick)="entrarTelaCheia(videoTela)"
+            ></video>
+          </div>
+        </div>
+      }
 
       @for (msg of messages(); track $index) {
         <div class="flex items-start gap-3 rounded-md px-2 py-1.5 transition hover:bg-white/5">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-500 font-bold text-white">
+          <div
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-500 font-bold text-white"
+          >
             {{ msg.socketId.charAt(0).toUpperCase() }}
           </div>
           <div class="min-w-0 pt-0.5">
@@ -111,9 +114,14 @@
         </div>
       } @empty {
         <div class="flex h-full flex-col items-center justify-center text-center">
-          <span class="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#404249] text-3xl">#</span>
+          <span
+            class="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#404249] text-3xl"
+            >#</span
+          >
           <p class="text-lg font-bold">Boas-vindas a # amor!</p>
-          <p class="mt-1 text-sm text-slate-400">Envie a primeira mensagem para começar a conversa.</p>
+          <p class="mt-1 text-sm text-slate-400">
+            Envie a primeira mensagem para começar a conversa.
+          </p>
         </div>
       }
     </div>
@@ -127,7 +135,10 @@
           class="h-12 min-w-0 flex-1 rounded-lg border border-transparent bg-[#383a40] px-4 text-sm text-white outline-none placeholder:text-slate-400 focus:border-indigo-500"
           placeholder="Conversar em # amor"
         />
-        <button type="submit" class="h-12 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white shadow transition hover:bg-indigo-400 active:scale-95 cursor-pointer">
+        <button
+          type="submit"
+          class="h-12 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white shadow transition hover:bg-indigo-400 active:scale-95 cursor-pointer"
+        >
           Enviar
         </button>
       </form>
