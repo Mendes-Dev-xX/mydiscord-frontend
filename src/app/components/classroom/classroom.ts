@@ -169,7 +169,7 @@ export class Classroom {
             ideal: 1080,
           },
         },
-        audio: false,
+        audio: true,
       });
 
       this.telaCompartilhada = stream;
