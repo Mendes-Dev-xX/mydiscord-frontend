@@ -163,10 +163,10 @@ export class Classroom {
             max: 60,
           },
           width: {
-            ideal: 1920,
+            ideal: 1280,
           },
           height: {
-            ideal: 1080,
+            ideal: 720,
           },
         },
         audio: true,
