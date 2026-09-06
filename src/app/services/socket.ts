@@ -6,7 +6,7 @@ import { BehaviorSubject } from 'rxjs';
 const socketServerUrl = 'https://backend-t4yi.onrender.com';
 @Injectable({ providedIn: 'root' })
 export class Socket {
-  // Mantém a conexão automática: o id já estará disponível ao entrar na sala.
+
   socket = io(socketServerUrl);
   currentRoom = signal<string | null>(null);
   peer!: Peer;

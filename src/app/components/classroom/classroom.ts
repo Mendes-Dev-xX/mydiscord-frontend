@@ -212,4 +212,12 @@ export class Classroom {
   private removerTelaRemota(socketId: string) {
     this.telasRemotas.update((telas) => telas.filter((tela) => tela.socketId !== socketId));
   }
+
+  entrarTelaCheia(video: HTMLVideoElement) {
+  if (!isPlatformBrowser(this.platformId)) return;
+
+  if (video.requestFullscreen) {
+    video.requestFullscreen();
+  }
+}
 }
