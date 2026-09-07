@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Classroom } from '../classroom/classroom';
+import { Socket } from '../../services/socket';
 
 @Component({
   selector: 'app-home',
@@ -7,4 +8,11 @@ import { Classroom } from '../classroom/classroom';
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
-export class Home {}
+export class Home {
+
+ socketService = inject(Socket)
+
+  modalMenu(){
+    this.socketService.openMenuModel()
+  }
+}

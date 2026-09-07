@@ -12,6 +12,7 @@ export class Socket {
   peer!: Peer;
   localStream!: MediaStream;
   peerPronto = new BehaviorSubject<boolean>(false);
+  isVisible = signal<boolean>(false)
 
   constructor() {
     this.socket.on('connect', () => {
@@ -63,4 +64,9 @@ export class Socket {
   onReceiveMessage(callback: (data: { socketId: string; message: string }) => void) {
     this.socket.on('receive-message', callback);
   }
+
+  openMenuModel(){
+      this.isVisible.update(valueAtually => !valueAtually)
+      console.log(this.isVisible())
+}
 }

@@ -12,7 +12,6 @@ import { FormsModule } from '@angular/forms';
 export class Classroom {
   socketService = inject(Socket);
   platformId = inject(PLATFORM_ID); // Injeta o identificador de plataforma
-
   socketIds = signal<string[]>([]);
   socketId = '';
   joinRoom = false;
@@ -23,6 +22,8 @@ export class Classroom {
   telasRemotas = signal<{ socketId: string; stream: MediaStream }[]>([]);
   message = '';
   messages = signal<{ socketId: string; message: string }[]>([]);
+
+
   async entrarSala(room: string) {
     if (this.socketService.currentRoom() === room) {
       return;
@@ -47,6 +48,7 @@ export class Classroom {
       alert('Você precisa permitir o microfone para entrar no canal de voz!');
     }
   }
+
 
   sairDaSalaAtual() {
     this.socketService.leaveRoom();
@@ -220,4 +222,7 @@ export class Classroom {
     video.requestFullscreen();
   }
 }
+
+
+
 }
