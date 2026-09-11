@@ -18,10 +18,10 @@ export class Classroom {
   volumeMicrofone = signal(100);
   reducaoDeRuido = signal(true);
   cancelamentoDeEco = signal(true);
-  ganhoAutomatico = signal(true);
-  filtroDeVoz = signal(true);
+  ganhoAutomatico = signal(false);
+  filtroDeVoz = signal(false);
   intensidadeDoFiltro = signal(2);
-  bloqueadorDeRuido = signal(true);
+  bloqueadorDeRuido = signal(false);
   limiteDeRuido = signal(3);
   configuracoesAbertas = signal(false);
   volumesDosAmigos = signal<Record<string, number>>({});
@@ -268,25 +268,13 @@ export class Classroom {
     this.contextoDeAudio = new AudioContext();
 
     const fonte = this.contextoDeAudio.createMediaStreamSource(stream);
-    this.filtroPassaAlta = this.contextoDeAudio.createBiquadFilter();
-    this.filtroPassaAlta.type = 'highpass';
-    this.compressorDoMicrofone = this.contextoDeAudio.createDynamicsCompressor();
-    this.compressorDoMicrofone.ratio.value = 4;
-    this.compressorDoMicrofone.attack.value = 0.01;
-    this.compressorDoMicrofone.release.value = 0.2;
-    this.bloqueadorDoMicrofone = this.contextoDeAudio.createScriptProcessor(1024, 1, 1);
-    this.bloqueadorDoMicrofone.onaudioprocess = (evento) => this.processarBloqueadorDeRuido(evento);
     this.ganhoDoMicrofone = this.contextoDeAudio.createGain();
     const destino = this.contextoDeAudio.createMediaStreamDestination();
     this.ganhoDoMicrofone.gain.value = this.volumeMicrofone() / 100;
-    this.atualizarFiltroDeVoz();
 
-    fonte
-      .connect(this.filtroPassaAlta)
-      .connect(this.compressorDoMicrofone)
-      .connect(this.bloqueadorDoMicrofone)
-      .connect(this.ganhoDoMicrofone)
-      .connect(destino);
+    // O microfone é encaminhado sem processamento por blocos para evitar
+    // distorção, chiado e o efeito de voz robotizada.
+    fonte.connect(this.ganhoDoMicrofone).connect(destino);
     this.socketService.localStream = destino.stream;
   }
 
