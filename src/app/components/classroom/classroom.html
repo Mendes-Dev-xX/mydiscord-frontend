@@ -100,6 +100,15 @@
           <span>▣</span>
           {{ compartilhandoTela() ? 'Parar de compartilhar' : 'Compartilhar tela' }}
         </button>
+        <button
+          type="button"
+          (click)="abrirConfiguracoesDeVoz()"
+          class="flex h-8 w-8 items-center justify-center rounded-md bg-slate-700 text-lg text-slate-200 transition hover:bg-indigo-500 hover:text-white cursor-pointer"
+          title="Configurações de voz"
+          aria-label="Configurações de voz"
+        >
+          ⚙
+        </button>
       }
     </header>
 
@@ -214,4 +223,111 @@
       </form>
     }
   </section>
+
+  @if (configuracoesAbertas()) {
+    <div
+      class="absolute inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      (click)="fecharConfiguracoesDeVoz()"
+    >
+      <section
+        class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl border border-slate-700 bg-[#313338] shadow-2xl"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Configurações de voz"
+      >
+        <header class="flex items-center justify-between border-b border-slate-700 px-6 py-5">
+          <div>
+            <h2 class="text-lg font-bold text-white">Configurações de voz</h2>
+            <p class="mt-1 text-sm text-slate-400">Ajuste seu microfone e o áudio de cada pessoa.</p>
+          </div>
+          <button
+            type="button"
+            (click)="fecharConfiguracoesDeVoz()"
+            class="flex h-8 w-8 items-center justify-center rounded-md text-xl text-slate-400 transition hover:bg-slate-700 hover:text-white cursor-pointer"
+            aria-label="Fechar configurações"
+          >
+            ×
+          </button>
+        </header>
+
+        <div class="space-y-6 p-6">
+          <section class="space-y-4">
+            <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Entrada de voz</h3>
+            <div>
+              <div class="mb-2 flex items-center justify-between text-sm text-slate-200">
+                <label for="config-volume-microfone">Volume de entrada</label>
+                <span>{{ volumeMicrofone() }}%</span>
+              </div>
+              <input
+                id="config-volume-microfone"
+                type="range"
+                min="0"
+                max="100"
+                [value]="volumeMicrofone()"
+                (input)="alterarVolumeDoMicrofone($event)"
+                class="h-1 w-full cursor-pointer accent-indigo-500"
+              />
+            </div>
+
+            <label class="flex cursor-pointer items-center justify-between rounded-lg bg-[#2b2d31] p-4">
+              <span>
+                <span class="block text-sm font-semibold text-white">Redução de ruído</span>
+                <span class="text-xs text-slate-400">Usa o processamento nativo disponível no navegador.</span>
+              </span>
+              <input type="checkbox" [checked]="reducaoDeRuido()" (change)="alternarReducaoDeRuido($event)" class="h-4 w-4 accent-indigo-500" />
+            </label>
+
+            <label class="flex cursor-pointer items-center justify-between rounded-lg bg-[#2b2d31] p-4">
+              <span>
+                <span class="block text-sm font-semibold text-white">Cancelamento de eco</span>
+                <span class="text-xs text-slate-400">Evita que o som dos amigos volte pelo seu microfone.</span>
+              </span>
+              <input type="checkbox" [checked]="cancelamentoDeEco()" (change)="alternarCancelamentoDeEco($event)" class="h-4 w-4 accent-indigo-500" />
+            </label>
+
+            <label class="flex cursor-pointer items-center justify-between rounded-lg bg-[#2b2d31] p-4">
+              <span>
+                <span class="block text-sm font-semibold text-white">Ganho automático</span>
+                <span class="text-xs text-slate-400">Equilibra automaticamente o volume do microfone.</span>
+              </span>
+              <input type="checkbox" [checked]="ganhoAutomatico()" (change)="alternarGanhoAutomatico($event)" class="h-4 w-4 accent-indigo-500" />
+            </label>
+
+            <div class="rounded-lg bg-[#2b2d31] p-4">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-sm font-semibold text-white">Filtro de voz</p>
+                  <p class="text-xs text-slate-400">Reduz graves contínuos e suaviza variações de volume.</p>
+                </div>
+                <input type="checkbox" [checked]="filtroDeVoz()" (change)="alternarFiltroDeVoz($event)" class="h-4 w-4 shrink-0 accent-indigo-500" />
+              </div>
+              <div class="mt-4">
+                <div class="mb-2 flex justify-between text-xs text-slate-400">
+                  <span>Intensidade</span>
+                  <span>{{ intensidadeDoFiltro() }}/3</span>
+                </div>
+                <input type="range" min="1" max="3" [value]="intensidadeDoFiltro()" (input)="alterarIntensidadeDoFiltro($event)" [disabled]="!filtroDeVoz()" class="h-1 w-full cursor-pointer accent-indigo-500 disabled:cursor-not-allowed disabled:opacity-40" />
+              </div>
+            </div>
+          </section>
+
+          <section class="space-y-3 border-t border-slate-700 pt-6">
+            <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Volume dos participantes</h3>
+            @for (id of socketIds(); track id) {
+              <div class="rounded-lg bg-[#2b2d31] p-4">
+                <div class="mb-3 flex items-center justify-between gap-3 text-sm">
+                  <span class="min-w-0 truncate font-semibold text-white">{{ id }}</span>
+                  <span class="text-slate-400">{{ volumeDoAmigo(id) }}%</span>
+                </div>
+                <input type="range" min="0" max="100" [value]="volumeDoAmigo(id)" (input)="alterarVolumeDoAmigo(id, $event)" class="h-1 w-full cursor-pointer accent-indigo-500" />
+              </div>
+            } @empty {
+              <p class="rounded-lg bg-[#2b2d31] p-4 text-sm text-slate-400">Entre mais pessoas para ajustar o volume individual delas.</p>
+            }
+          </section>
+        </div>
+      </section>
+    </div>
+  }
 </main>

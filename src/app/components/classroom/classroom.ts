@@ -17,10 +17,17 @@ export class Classroom {
   socketId = '';
   volumeMicrofone = signal(100);
   reducaoDeRuido = signal(true);
+  cancelamentoDeEco = signal(true);
+  ganhoAutomatico = signal(true);
+  filtroDeVoz = signal(true);
+  intensidadeDoFiltro = signal(2);
+  configuracoesAbertas = signal(false);
   volumesDosAmigos = signal<Record<string, number>>({});
   private streamOriginalDoMicrofone?: MediaStream;
   private contextoDeAudio?: AudioContext;
   private ganhoDoMicrofone?: GainNode;
+  private filtroPassaAlta?: BiquadFilterNode;
+  private compressorDoMicrofone?: DynamicsCompressorNode;
   joinRoom = false;
   chamadasAtivas: any[] = [];
   chamadasDeTela: any[] = [];
@@ -50,8 +57,8 @@ export class Classroom {
       this.streamOriginalDoMicrofone = await navigator.mediaDevices.getUserMedia({
         audio: {
           noiseSuppression: this.reducaoDeRuido(),
-          echoCancellation: true,
-          autoGainControl: true,
+          echoCancellation: this.cancelamentoDeEco(),
+          autoGainControl: this.ganhoAutomatico(),
         },
         video: false,
       });
@@ -85,6 +92,8 @@ export class Classroom {
     this.contextoDeAudio?.close();
     this.contextoDeAudio = undefined;
     this.ganhoDoMicrofone = undefined;
+    this.filtroPassaAlta = undefined;
+    this.compressorDoMicrofone = undefined;
     this.socketIds.set([]);
 
     const audios = document.querySelectorAll('audio');
@@ -182,11 +191,46 @@ export class Classroom {
     const ativada = (evento.target as HTMLInputElement).checked;
     this.reducaoDeRuido.set(ativada);
 
+    await this.aplicarConfiguracoesNativas();
+  }
+
+  async alternarCancelamentoDeEco(evento: Event) {
+    this.cancelamentoDeEco.set((evento.target as HTMLInputElement).checked);
+    await this.aplicarConfiguracoesNativas();
+  }
+
+  async alternarGanhoAutomatico(evento: Event) {
+    this.ganhoAutomatico.set((evento.target as HTMLInputElement).checked);
+    await this.aplicarConfiguracoesNativas();
+  }
+
+  alternarFiltroDeVoz(evento: Event) {
+    this.filtroDeVoz.set((evento.target as HTMLInputElement).checked);
+    this.atualizarFiltroDeVoz();
+  }
+
+  alterarIntensidadeDoFiltro(evento: Event) {
+    this.intensidadeDoFiltro.set(Number((evento.target as HTMLInputElement).value));
+    this.atualizarFiltroDeVoz();
+  }
+
+  abrirConfiguracoesDeVoz() {
+    this.configuracoesAbertas.set(true);
+  }
+
+  fecharConfiguracoesDeVoz() {
+    this.configuracoesAbertas.set(false);
+  }
+
+  private async aplicarConfiguracoesNativas() {
+    const track = this.streamOriginalDoMicrofone?.getAudioTracks()[0];
+    if (!track) return;
+
     try {
-      await this.streamOriginalDoMicrofone?.getAudioTracks()[0]?.applyConstraints({
-        noiseSuppression: ativada,
-        echoCancellation: ativada,
-        autoGainControl: ativada,
+      await track.applyConstraints({
+        noiseSuppression: this.reducaoDeRuido(),
+        echoCancellation: this.cancelamentoDeEco(),
+        autoGainControl: this.ganhoAutomatico(),
       });
     } catch (error) {
       console.log('O navegador não conseguiu alterar a redução de ruído.', error);
@@ -210,12 +254,31 @@ export class Classroom {
     this.contextoDeAudio = new AudioContext();
 
     const fonte = this.contextoDeAudio.createMediaStreamSource(stream);
+    this.filtroPassaAlta = this.contextoDeAudio.createBiquadFilter();
+    this.filtroPassaAlta.type = 'highpass';
+    this.compressorDoMicrofone = this.contextoDeAudio.createDynamicsCompressor();
+    this.compressorDoMicrofone.ratio.value = 4;
+    this.compressorDoMicrofone.attack.value = 0.01;
+    this.compressorDoMicrofone.release.value = 0.2;
     this.ganhoDoMicrofone = this.contextoDeAudio.createGain();
     const destino = this.contextoDeAudio.createMediaStreamDestination();
     this.ganhoDoMicrofone.gain.value = this.volumeMicrofone() / 100;
+    this.atualizarFiltroDeVoz();
 
-    fonte.connect(this.ganhoDoMicrofone).connect(destino);
+    fonte
+      .connect(this.filtroPassaAlta)
+      .connect(this.compressorDoMicrofone)
+      .connect(this.ganhoDoMicrofone)
+      .connect(destino);
     this.socketService.localStream = destino.stream;
+  }
+
+  private atualizarFiltroDeVoz() {
+    if (!this.filtroPassaAlta || !this.compressorDoMicrofone) return;
+
+    const intensidade = this.intensidadeDoFiltro();
+    this.filtroPassaAlta.frequency.value = this.filtroDeVoz() ? 60 + intensidade * 40 : 20;
+    this.compressorDoMicrofone.threshold.value = this.filtroDeVoz() ? -18 - intensidade * 3 : 0;
   }
 
   async compartilharTela() {
