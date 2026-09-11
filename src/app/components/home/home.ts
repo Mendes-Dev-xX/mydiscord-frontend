@@ -13,6 +13,10 @@ export class Home {
  socketService = inject(Socket)
 
   modalMenu(){
-    this.socketService.openMenuModel()
+    this.socketService.openMenuModel();
+  }
+
+  modalCreateRoom(){
+    this.socketService.openCreateModal();
   }
 }

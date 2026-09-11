@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common'; // ADICIONE ISSO
 import { Socket } from '../../services/socket';
 import { ToolsRoom } from '../tools-room/tools-room';
 import { FormsModule } from '@angular/forms';
+import { Rooms } from '../../models/rooms';
 @Component({
   selector: 'app-classroom',
   imports: [ToolsRoom, FormsModule],
@@ -14,6 +15,12 @@ export class Classroom {
   platformId = inject(PLATFORM_ID); // Injeta o identificador de plataforma
   socketIds = signal<string[]>([]);
   socketId = '';
+  volumeMicrofone = signal(100);
+  reducaoDeRuido = signal(true);
+  volumesDosAmigos = signal<Record<string, number>>({});
+  private streamOriginalDoMicrofone?: MediaStream;
+  private contextoDeAudio?: AudioContext;
+  private ganhoDoMicrofone?: GainNode;
   joinRoom = false;
   chamadasAtivas: any[] = [];
   chamadasDeTela: any[] = [];
@@ -23,6 +30,9 @@ export class Classroom {
   message = '';
   messages = signal<{ socketId: string; message: string }[]>([]);
 
+  listRoom = signal<Rooms[]>([
+    {id: "amor", name: 'Aqui amorzinho'}
+  ])
 
   async entrarSala(room: string) {
     if (this.socketService.currentRoom() === room) {
@@ -37,10 +47,15 @@ export class Classroom {
     if (!isPlatformBrowser(this.platformId)) return;
 
     try {
-      this.socketService.localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+      this.streamOriginalDoMicrofone = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          noiseSuppression: this.reducaoDeRuido(),
+          echoCancellation: true,
+          autoGainControl: true,
+        },
         video: false,
       });
+      this.configurarVolumeDoMicrofone(this.streamOriginalDoMicrofone);
 
       this.socketService.joinRoom(room);
     } catch (err) {
@@ -64,9 +79,12 @@ export class Classroom {
     this.pararCompartilhamentoDeTela();
     this.telasRemotas.set([]);
 
-    if (this.socketService.localStream) {
-      this.socketService.localStream.getTracks().forEach((track) => track.stop());
-    }
+    this.socketService.localStream?.getTracks().forEach((track) => track.stop());
+    this.streamOriginalDoMicrofone?.getTracks().forEach((track) => track.stop());
+    this.streamOriginalDoMicrofone = undefined;
+    this.contextoDeAudio?.close();
+    this.contextoDeAudio = undefined;
+    this.ganhoDoMicrofone = undefined;
     this.socketIds.set([]);
 
     const audios = document.querySelectorAll('audio');
@@ -141,6 +159,7 @@ export class Classroom {
     audioEl.id = `audio-${userId}`;
     audioEl.srcObject = stream;
     audioEl.autoplay = true;
+    audioEl.volume = this.volumeDoAmigo(userId) / 100;
     audioEl.style.display = 'none';
     document.body.appendChild(audioEl);
   }
@@ -151,6 +170,52 @@ export class Classroom {
     this.socketService.sendMessage(this.message.trim());
 
     this.message = '';
+  }
+
+  alterarVolumeDoMicrofone(evento: Event) {
+    const volume = Number((evento.target as HTMLInputElement).value);
+    this.volumeMicrofone.set(volume);
+    if (this.ganhoDoMicrofone) this.ganhoDoMicrofone.gain.value = volume / 100;
+  }
+
+  async alternarReducaoDeRuido(evento: Event) {
+    const ativada = (evento.target as HTMLInputElement).checked;
+    this.reducaoDeRuido.set(ativada);
+
+    try {
+      await this.streamOriginalDoMicrofone?.getAudioTracks()[0]?.applyConstraints({
+        noiseSuppression: ativada,
+        echoCancellation: ativada,
+        autoGainControl: ativada,
+      });
+    } catch (error) {
+      console.log('O navegador não conseguiu alterar a redução de ruído.', error);
+    }
+  }
+
+  alterarVolumeDoAmigo(socketId: string, evento: Event) {
+    const volume = Number((evento.target as HTMLInputElement).value);
+    this.volumesDosAmigos.update((volumes) => ({ ...volumes, [socketId]: volume }));
+
+    const audio = document.getElementById(`audio-${socketId}`) as HTMLAudioElement | null;
+    if (audio) audio.volume = volume / 100;
+  }
+
+  volumeDoAmigo(socketId: string) {
+    return this.volumesDosAmigos()[socketId] ?? 100;
+  }
+
+  private configurarVolumeDoMicrofone(stream: MediaStream) {
+    this.contextoDeAudio?.close();
+    this.contextoDeAudio = new AudioContext();
+
+    const fonte = this.contextoDeAudio.createMediaStreamSource(stream);
+    this.ganhoDoMicrofone = this.contextoDeAudio.createGain();
+    const destino = this.contextoDeAudio.createMediaStreamDestination();
+    this.ganhoDoMicrofone.gain.value = this.volumeMicrofone() / 100;
+
+    fonte.connect(this.ganhoDoMicrofone).connect(destino);
+    this.socketService.localStream = destino.stream;
   }
 
   async compartilharTela() {

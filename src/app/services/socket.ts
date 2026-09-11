@@ -12,7 +12,8 @@ export class Socket {
   peer!: Peer;
   localStream!: MediaStream;
   peerPronto = new BehaviorSubject<boolean>(false);
-  isVisible = signal<boolean>(false)
+  isVisible = signal<boolean>(false);
+  isVisibleCreateRoom = signal<boolean>(false);
 
   constructor() {
     this.socket.on('connect', () => {
@@ -68,5 +69,9 @@ export class Socket {
   openMenuModel(){
       this.isVisible.update(valueAtually => !valueAtually)
       console.log(this.isVisible())
+}
+  openCreateModal(){
+      this.isVisibleCreateRoom.update(valueAtually => !valueAtually)
+      console.log(this.isVisibleCreateRoom())
 }
 }

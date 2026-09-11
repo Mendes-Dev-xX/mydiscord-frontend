@@ -1,47 +1,80 @@
 <main class="relative flex h-dvh min-w-0 overflow-hidden bg-[#313338]">
-    @if(socketService.isVisible()){
-      <aside class="relative flex w-64 shrink-0 flex-col border-r border-black/20 bg-[#2b2d31] pb-24"
-
-  >
-    <div
-      class="flex h-14 items-center border-b border-black/20 px-4 font-bold text-white shadow-sm"
-    >
-      <span class="mr-2 text-indigo-400">♥</span> Nosso servidor
-    </div>
-
-    <div class="px-3 pt-5">
-      <p class="mb-2 px-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
-        Canais de voz
-      </p>
-      <button
-        (click)="entrarSala('amor')"
-        class="flex w-full items-center gap-2 rounded-md bg-[#404249] px-2 py-2 text-left text-sm font-semibold text-white transition hover:bg-[#4b4e55] cursor-pointer"
+  @if (socketService.isVisible()) {
+    <aside class="relative flex w-64 shrink-0 flex-col border-r border-black/20 bg-[#2b2d31] pb-24">
+      <div
+        class="flex h-14 items-center border-b border-black/20 px-4 font-bold text-white shadow-sm"
       >
-        <span class="text-base">♬</span>
-        Aqui amorzinho
-      </button>
-    </div>
+        <span class="mr-2 text-indigo-400">♥</span> Nosso servidor
+      </div>
 
-    @if (socketService.currentRoom() === 'amor') {
-      <div class="mx-3 mt-3 space-y-2 rounded-lg bg-[#1e1f22] p-3">
-        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Na sala</p>
-        <div class="flex items-center gap-2 text-sm text-slate-200">
-          <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
-          <span class="truncate">Você · {{ socketId }}</span>
+      <div class="px-3 pt-5">
+        <p class="mb-2 px-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+          Canais de voz
+        </p>
+        <button
+          (click)="entrarSala('amor')"
+          class="flex w-full items-center gap-2 rounded-md bg-[#404249] px-2 py-2 text-left text-sm font-semibold text-white transition hover:bg-[#4b4e55] cursor-pointer"
+        >
+          <span class="text-base">♬</span>
+          Aqui amorzinho
+        </button>
+      </div>
+
+      @if (socketService.currentRoom() === 'amor') {
+        <div class="mx-3 mt-3 space-y-2 rounded-lg bg-[#1e1f22] p-3">
+          <p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Na sala</p>
+          <div class="flex items-center gap-2 text-sm text-slate-200">
+            <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
+            <span class="truncate">Você · {{ socketId }}</span>
+          </div>
+        <div class="space-y-2 border-t border-slate-700 pt-3">
+          <div class="flex items-center justify-between text-xs text-slate-300">
+            <label for="volume-microfone">Seu microfone</label>
+            <span>{{ volumeMicrofone() }}%</span>
+          </div>
+          <input
+            id="volume-microfone"
+            type="range"
+            min="0"
+            max="100"
+            [value]="volumeMicrofone()"
+            (input)="alterarVolumeDoMicrofone($event)"
+            class="h-1 w-full cursor-pointer accent-indigo-500"
+          />
+          <label class="flex cursor-pointer items-center gap-2 text-xs text-slate-300">
+            <input
+              type="checkbox"
+              [checked]="reducaoDeRuido()"
+              (change)="alternarReducaoDeRuido($event)"
+              class="h-3.5 w-3.5 accent-indigo-500"
+            />
+            Redução de ruído
+          </label>
         </div>
         @for (id of socketIds(); track id) {
-          <div class="flex items-center gap-2 text-sm text-slate-300">
+          <div class="space-y-1.5 border-t border-slate-700 pt-2 text-sm text-slate-300">
+            <div class="flex items-center gap-2">
             <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
             <span class="truncate">{{ id }}</span>
+            </div>
+            <div class="flex items-center gap-2 pl-4 text-xs text-slate-400">
+              <span>Volume</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [value]="volumeDoAmigo(id)"
+                (input)="alterarVolumeDoAmigo(id, $event)"
+                class="h-1 min-w-0 flex-1 cursor-pointer accent-indigo-500"
+              />
+              <span>{{ volumeDoAmigo(id) }}%</span>
+            </div>
           </div>
-        }
-      </div>
-    }
-  </aside>
-
-    }
-
-
+          }
+        </div>
+      }
+    </aside>
+  }
 
   <app-tools-room />
 
@@ -147,6 +180,36 @@
           class="h-12 rounded-lg bg-indigo-500 px-6 text-sm font-semibold text-white shadow transition hover:bg-indigo-400 active:scale-95 cursor-pointer"
         >
           Enviar
+        </button>
+      </form>
+    }
+
+    @if (socketService.isVisibleCreateRoom()) {
+      <form
+        class="rounded-2xl absolute flex-col left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%] bg-slate-800 w-100 h-100 flex justify-center items-center"
+      >
+        <div class="flex flex-col">
+          <div class="flex flex-col mb-4">
+            <label>Id da sala</label>
+            <input
+              class="bg-slate-50 text-black w-50 h-10 rounded-2xl text-center"
+              type="text"
+              placeholder="Escolha um id"
+            />
+          </div>
+
+          <div class="flex flex-col mb-4">
+            <label>Nome da sala</label>
+            <input
+              class="bg-slate-50 text-black w-50 h-10 rounded-2xl text-center"
+              type="text"
+              placeholder="Escolha um nome"
+            />
+          </div>
+        </div>
+
+        <button class="w-30 h-12 bg-green-400 rounded-2xl text-slate-700 font-bold cursor-pointer">
+          Criar sala
         </button>
       </form>
     }
