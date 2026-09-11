@@ -27,7 +27,7 @@
             <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
             <span class="truncate">Você · {{ socketId }}</span>
           </div>
-        <div class="space-y-2 border-t border-slate-700 pt-3">
+        <div class="hidden space-y-2 border-t border-slate-700 pt-3">
           <div class="flex items-center justify-between text-xs text-slate-300">
             <label for="volume-microfone">Seu microfone</label>
             <span>{{ volumeMicrofone() }}%</span>
@@ -57,7 +57,7 @@
             <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-400"></span>
             <span class="truncate">{{ id }}</span>
             </div>
-            <div class="flex items-center gap-2 pl-4 text-xs text-slate-400">
+            <div class="hidden flex items-center gap-2 pl-4 text-xs text-slate-400">
               <span>Volume</span>
               <input
                 type="range"
@@ -308,6 +308,23 @@
                   <span>{{ intensidadeDoFiltro() }}/3</span>
                 </div>
                 <input type="range" min="1" max="3" [value]="intensidadeDoFiltro()" (input)="alterarIntensidadeDoFiltro($event)" [disabled]="!filtroDeVoz()" class="h-1 w-full cursor-pointer accent-indigo-500 disabled:cursor-not-allowed disabled:opacity-40" />
+              </div>
+            </div>
+
+            <div class="rounded-lg bg-[#2b2d31] p-4">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-sm font-semibold text-white">Bloqueador de ruído contínuo</p>
+                  <p class="text-xs text-slate-400">Corta o áudio baixo entre as falas, útil para ventilador.</p>
+                </div>
+                <input type="checkbox" [checked]="bloqueadorDeRuido()" (change)="alternarBloqueadorDeRuido($event)" class="h-4 w-4 shrink-0 accent-indigo-500" />
+              </div>
+              <div class="mt-4">
+                <div class="mb-2 flex justify-between text-xs text-slate-400">
+                  <span>Força do bloqueio</span>
+                  <span>{{ limiteDeRuido() }}/5</span>
+                </div>
+                <input type="range" min="1" max="5" [value]="limiteDeRuido()" (input)="alterarLimiteDeRuido($event)" [disabled]="!bloqueadorDeRuido()" class="h-1 w-full cursor-pointer accent-indigo-500 disabled:cursor-not-allowed disabled:opacity-40" />
               </div>
             </div>
           </section>

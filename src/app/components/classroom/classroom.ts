@@ -21,6 +21,8 @@ export class Classroom {
   ganhoAutomatico = signal(true);
   filtroDeVoz = signal(true);
   intensidadeDoFiltro = signal(2);
+  bloqueadorDeRuido = signal(true);
+  limiteDeRuido = signal(3);
   configuracoesAbertas = signal(false);
   volumesDosAmigos = signal<Record<string, number>>({});
   private streamOriginalDoMicrofone?: MediaStream;
@@ -28,6 +30,8 @@ export class Classroom {
   private ganhoDoMicrofone?: GainNode;
   private filtroPassaAlta?: BiquadFilterNode;
   private compressorDoMicrofone?: DynamicsCompressorNode;
+  private bloqueadorDoMicrofone?: ScriptProcessorNode;
+  private ganhoDoBloqueador = 0;
   joinRoom = false;
   chamadasAtivas: any[] = [];
   chamadasDeTela: any[] = [];
@@ -94,6 +98,8 @@ export class Classroom {
     this.ganhoDoMicrofone = undefined;
     this.filtroPassaAlta = undefined;
     this.compressorDoMicrofone = undefined;
+    this.bloqueadorDoMicrofone = undefined;
+    this.ganhoDoBloqueador = 0;
     this.socketIds.set([]);
 
     const audios = document.querySelectorAll('audio');
@@ -214,6 +220,14 @@ export class Classroom {
     this.atualizarFiltroDeVoz();
   }
 
+  alternarBloqueadorDeRuido(evento: Event) {
+    this.bloqueadorDeRuido.set((evento.target as HTMLInputElement).checked);
+  }
+
+  alterarLimiteDeRuido(evento: Event) {
+    this.limiteDeRuido.set(Number((evento.target as HTMLInputElement).value));
+  }
+
   abrirConfiguracoesDeVoz() {
     this.configuracoesAbertas.set(true);
   }
@@ -260,6 +274,8 @@ export class Classroom {
     this.compressorDoMicrofone.ratio.value = 4;
     this.compressorDoMicrofone.attack.value = 0.01;
     this.compressorDoMicrofone.release.value = 0.2;
+    this.bloqueadorDoMicrofone = this.contextoDeAudio.createScriptProcessor(1024, 1, 1);
+    this.bloqueadorDoMicrofone.onaudioprocess = (evento) => this.processarBloqueadorDeRuido(evento);
     this.ganhoDoMicrofone = this.contextoDeAudio.createGain();
     const destino = this.contextoDeAudio.createMediaStreamDestination();
     this.ganhoDoMicrofone.gain.value = this.volumeMicrofone() / 100;
@@ -268,6 +284,7 @@ export class Classroom {
     fonte
       .connect(this.filtroPassaAlta)
       .connect(this.compressorDoMicrofone)
+      .connect(this.bloqueadorDoMicrofone)
       .connect(this.ganhoDoMicrofone)
       .connect(destino);
     this.socketService.localStream = destino.stream;
@@ -279,6 +296,23 @@ export class Classroom {
     const intensidade = this.intensidadeDoFiltro();
     this.filtroPassaAlta.frequency.value = this.filtroDeVoz() ? 60 + intensidade * 40 : 20;
     this.compressorDoMicrofone.threshold.value = this.filtroDeVoz() ? -18 - intensidade * 3 : 0;
+  }
+
+  private processarBloqueadorDeRuido(evento: AudioProcessingEvent) {
+    const entrada = evento.inputBuffer.getChannelData(0);
+    const saida = evento.outputBuffer.getChannelData(0);
+    const limite = 0.008 + this.limiteDeRuido() * 0.006;
+    let energia = 0;
+
+    for (const amostra of entrada) energia += amostra * amostra;
+    const volume = Math.sqrt(energia / entrada.length);
+    const ganhoAlvo = !this.bloqueadorDeRuido() || volume >= limite ? 1 : 0;
+    const passo = ganhoAlvo > this.ganhoDoBloqueador ? 0.16 : 0.05;
+
+    for (let indice = 0; indice < entrada.length; indice++) {
+      this.ganhoDoBloqueador += (ganhoAlvo - this.ganhoDoBloqueador) * passo;
+      saida[indice] = entrada[indice] * this.ganhoDoBloqueador;
+    }
   }
 
   async compartilharTela() {
